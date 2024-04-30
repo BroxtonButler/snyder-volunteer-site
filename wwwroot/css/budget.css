@@ -1,0 +1,123 @@
+﻿
+.MyTable {
+    border-radius: 25px;
+    border-collapse: separate;
+    margin: 5px;
+    padding: 10px;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    border: 5px solid black;
+}
+
+.budgetHeader {
+    align-content:center;
+    border-radius: 25px;
+    border-collapse: collapse;
+    padding:5px;
+    margin: 10px;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    border: 3px solid black;
+    width: 205px;
+}
+
+#item-row {
+    border: 3px solid black;
+    margin-right: 5px;
+}
+
+#cost-row {
+    border: 3px solid black;
+    margin-right: 5px;
+}
+
+#budget-row {
+    border: 3px solid black;
+    margin-right: 5px;
+}
+
+
+.btn-expense {
+    margin-left: 5px;
+    border: .5px solid grey;
+    margin-bottom: 35px;
+}
+
+#under-title {
+    border: 1px solid grey;
+}
+
+#total-expenses {
+    border: 2px solid black;
+    margin-right: 7px;
+    width: 100px;
+}
+
+#total-budget {
+    border: 2px solid black;
+    margin-right: 5px;
+    width: 100px;
+}
+
+#totals-table {
+    border-radius: 25px;
+    border-collapse: separate;
+    margin: 5px;
+    padding: 10px;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    border: 5px solid black;
+    margin-bottom: 30px;
+}
+
+#difference-table {
+    border-radius: 25px;
+    border-collapse: separate;
+    margin: 5px;
+    padding: 10px;
+    font-family: sans-serif;
+    min-width: 400px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    border: 5px solid black;
+}
+
+#difference {
+    border: 2px solid black;
+    width: 30px;
+}
+
+#container-tables {
+    display: inline-block;
+    margin-right: 20px;
+}
+
+#donation-button {
+    margin-top: 30px;
+    border: 5px solid black;
+}
+
+.donation-progress {
+    float: right;
+    border: 5px solid black;
+    margin: 30px;
+    padding: 10px;
+    display: inline-block;
+    border-radius: 20px;
+}
+
+#donation-title {
+    margin-top: 10px;
+    font-size: larger;
+}
+
+.goal-label {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(100%, -50%);
+}

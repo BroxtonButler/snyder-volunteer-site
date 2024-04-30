@@ -1,0 +1,144 @@
+﻿@page "/budget"
+
+<PageTitle> Budget Page </PageTitle>
+
+<link rel="stylesheet" href="css/budget.css"
+
+<h1 id="budgetTitle"> Budget Calculator </h1>
+
+<h2 id="under-title"></h2>
+
+<p> This Page takes your expenses and budget and finds the total expenses as well as the total budget. It also finds the difference between the two totals!</p>
+
+<h3 class="budgetHeader" >  <input type="text" placeholder="Enter Budget Name." /> </h3>
+
+<div id="container-tables">
+<table  class="MyTable">
+    <thead>
+        <tr>
+            <th id="expense-item"> Expense Item </th>
+            <th id="expense-cost"> Expense Cost </th>
+            <th id="budget-header"> Budget </th>
+ 
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var expense in expenses)
+        {
+            <tr> 
+                <td>  <input id ="item-row" type = "text" @bind = "expense.Item" placeholder="Enter item."/> </td>
+                <td>  <input  id="cost-row" type="number" @bind="expense.Cost" placeholder="Enter item cost." /> </td>
+                <td> <input  id="budget-row" type="number" @bind="expense.Budget" placeholder="Enter Budget For Item." /> </td>
+            </tr>
+
+            <button @onclick="() => DeleteExpenseRow(expense)"> delete </button>
+        }
+    </tbody> 
+ </table>
+
+ <button class="btn-expense" @onclick="AddExpenseRow"> Add Row</button>
+
+ <table id = "totals-table">
+     
+    <thead>
+        <tr>
+            <th> Expense Total</th>
+            <th> Budget Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td id = "total-expenses">@TotalExpenses</td>
+            <td id = "total-budget">@TotalBudget</td>
+        </tr>
+    </tbody>
+ </table>
+
+ <table id = "difference-table">
+     <thead>
+         <tr>
+             <th>Difference / Money left remaining</th>
+         </tr>
+     </thead>
+     <tbody>
+         <tr>
+             <td id ="difference"> @Difference</td>
+         </tr>
+     </tbody>
+
+ </table>
+ </div>
+
+<div class="donation-progress ">
+    <h5> Enter a donation below </h5>
+    <input type="number" @bind=Donation placeholder="Enter Donation Amount" />
+    <button id="donation-button" @onclick="AddDonation"> Enter </button>
+
+    <h4 id="donation-title">Donation Progress </h4>
+    <label for="progress-bar"> Current Amount: @CurrentAmount </label>
+    <progress id="progress-bar" value="@CurrentAmount" max="@Goal"></progress>
+    <span id="goal-label"> Goal: @Goal</span>
+
+</div>
+
+
+
+ 
+
+@code {
+    private List<Expense> expenses = new List<Expense>();
+
+    public class Expense
+    {
+        public String? Item { get; set; }
+        public double Cost { get; set; }
+        public double Budget { get; set; }
+
+    }
+
+    private void AddExpenseRow ()
+    {
+        expenses.Add(new Expense());
+    }
+
+    public double TotalExpenses
+    {
+        get { return expenses.Sum(e => e.Cost); }
+    }
+
+
+    public double TotalBudget
+    {
+        get { return expenses.Sum(e => e.Budget); }
+    }
+
+    public double Difference
+    {
+        get { return TotalBudget - TotalExpenses; }
+    }
+
+    private void DeleteExpenseRow( Expense expense)
+    {
+        expenses.Remove(expense);
+    }
+
+    private double Donation { get; set; }
+    private double CurrentAmount { get; set; } = 0;
+    private double Goal { get; set; } = 10000;
+
+
+
+    private void AddDonation()
+    {
+
+        CurrentAmount += Donation;
+    }
+
+
+
+
+
+}
+
+
+
