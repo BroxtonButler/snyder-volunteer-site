@@ -1,0 +1,225 @@
+﻿
+@page "/uploadimages"
+RenderMode
+InteractiveServer
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using snyder_volunteer_site.Data
+@using snyder_volunteer_site.Data.DataBase
+@inject IConfiguration config
+@inject ISqlDataAccess sql
+
+<PageTitle>Upload Images</PageTitle>
+<style>
+	.HomeLink {
+		color: yellow;
+		font-size: 20px;
+	}
+
+	.header {
+		padding: 20px;
+		background-color: dimgray;
+		color: white;
+	}
+
+</style>
+
+<div class="header">
+	<a class="HomeLink" href="https://www.sniderperformingarts.com/">Snider Performing Arts</a>
+</div>
+
+<h1>Upload your files here:</h1>
+
+<EditForm Model="newImage" FormName="makeVisible" OnSubmit="ChangeVisible">
+	@if (uploadVisible == true)
+	{
+		<button class="btn btn-primary mt-3" type="submit">Cancel</button>
+	}
+	@if (uploadVisible == false)
+	{
+		<button class="btn btn-primary mt-3" type="submit">Upload Pictures!</button>
+	}
+</EditForm>
+
+@if (uploadVisible == true)
+{
+	<EditForm Model="newImage" FormName="UserMaker" OnValidSubmit="SubmitForm">
+
+		<div>
+			<label for="ImageNew">Image to be Uploaded:</label>
+			<br />
+			<InputFile OnChange="@LoadFiles" accept=".png,.jpg,.jpeg" />
+		</div>
+		<div>
+			<label for="descPost">Enter Description:</label>
+			<InputText id="descPost" class="form-control" @bind-Value="newImage.descriptor" />
+		</div>
+
+		<button class="btn btn-primary mt-3" type="submit">Create Post</button>
+
+	</EditForm>
+}
+
+
+
+
+@if (errors.Count > 0)
+{
+	<h2>Errors</h2>
+
+	<ul class="text-danger">
+		@foreach (var error in errors)
+		{
+			<li>@error</li>
+		}
+
+	</ul>
+}
+
+
+@if (images is not null)
+{
+	<h2>Check out these cool images our volunteers have made</h2>
+	@foreach (var c in images)
+	{
+		<div class="header" width="50%">
+			<table border="4" padding="20">
+				<tbody>
+					<tr>
+						@if (string.IsNullOrWhiteSpace(c.FileName) == false)
+						{
+							<img src="@CreateWebPath(c.FileName)" height="500" />
+						}
+					</tr>
+					<tr>
+						<td><u>@c.UserName</u></td>
+					</tr>
+					<tr>
+						@if (@c.descriptor is not null)
+						{
+							@c.descriptor
+						}
+						else
+						{
+
+						}
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	}
+
+}
+
+
+@code {
+	private long maxFileSize = 1024 * 1024 * 3; //3MB sized files first two numbers are necessary to make it megabytes then the last number defines size
+	private int maxAllowedFiles = 3; //makes sure you can only upload 3 files
+	private List<string> errors = new();
+	private UploadImage newImage = new();
+	private IBrowserFile? file;
+	private bool uploadVisible = false;
+	private List<UploadImage>? images;
+
+	private async Task LoadPosts()
+	{
+		images = await sql.LoadData<UploadImage>("dbo.postInfo_getAll", "Default", null);
+		images.Reverse();
+	}
+
+	private string CreateWebPath(string relativePath)
+	{
+		return Path.Combine(config.GetValue<string>("WebStorageRoot")!, relativePath);
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadPosts();
+	}
+
+	private async Task ChangeVisible()
+	{
+		if (uploadVisible == false)
+		{
+			uploadVisible = true;
+		}
+		else
+		{
+			uploadVisible = false;
+		}
+	}
+
+
+
+	private async Task SubmitForm()
+	{
+		errors.Clear();
+
+		try
+		{
+			string relativePath = await CaptureFile();
+			newImage.FileName = relativePath;
+
+			//replace dbo.newPost_insert with whatever stored procedure you make to
+			await sql.SaveData("dbo.newPost_insert", "Default", newImage);
+
+			newImage = new();
+			file = null;
+			errors.Clear();
+
+			await LoadPosts();
+		}
+		catch (Exception ex)
+		{
+			errors.Add($"Error:{ex.Message}");
+		}
+
+		await ChangeVisible();
+	}
+
+	private void LoadFiles(InputFileChangeEventArgs e)
+	{
+		file = e.File;
+	}
+
+	private async Task<string> CaptureFile()
+	{
+		//errors.Clear();
+
+		if (file is null)
+		{
+			return "";
+		}
+
+		try
+		{
+			string newFileName = Path.ChangeExtension(
+					Path.GetRandomFileName(),
+					Path.GetExtension(file.Name));
+
+			//Replace any instances of "stevey" with the username of the server
+			string path = Path.Combine(
+					config.GetValue<string>("FileStorage")!,
+					"stevey",
+					newFileName);
+
+			string relativePath = Path.Combine(
+					"stevey",
+					newFileName);
+
+			Directory.CreateDirectory(Path.Combine(
+					config.GetValue<string>("FileStorage")!,
+					"stevey"));
+
+			await using FileStream fs = new(path, FileMode.Create);
+			await file.OpenReadStream(maxFileSize).CopyToAsync(fs);
+
+			return relativePath;
+		}
+		catch (Exception ex)
+		{
+			errors.Add($"File: {file.Name} Error: {ex.Message}");
+			throw;
+		}
+
+	}
+}
