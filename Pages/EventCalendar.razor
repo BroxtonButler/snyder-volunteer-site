@@ -1,0 +1,203 @@
+﻿@page "/eventcalendar"
+@using System.Text
+@using snyder_volunteer_site.Data
+@using snyder_volunteer_site.Data.DataBase
+@using snyder_volunteer_site.Data.Extensions
+<PageTitle>Event Calendar</PageTitle>
+
+<style>
+	.day-of-week {
+		text-align: center;
+	}
+
+	.calendar-day {
+		width: 30px;
+		height: 25px;
+	}
+
+	.black-border {
+		border: 2px solid black;
+	}
+
+	.orange-border {
+		border: 2px solid orange;
+	}
+
+	.green-border {
+		border: 2px solid green;
+	}
+
+	.date-span {
+		display: flex;
+	}
+
+	.event-container {
+		display: flex;
+		flex-direction: column;
+		height: 100px;
+		width: 150px;
+	}
+
+	.volunteer-event {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid red;
+		border-radius: 5px;
+		overflow: hidden;
+		text-wrap: nowrap;
+	}
+</style>
+
+<div>
+	<InputDate @bind-Value="SelectedMonth" @onblur="() => SelectDay(SelectedMonth)"/>
+	<table>
+		<tr>
+			<td class="day-of-week">Sunday</td>
+			<td class="day-of-week">Monday</td>
+			<td class="day-of-week">Tuesday</td>
+			<td class="day-of-week">Wednesday</td>
+			<td class="day-of-week">Thursday</td>
+			<td class="day-of-week">Friday</td>
+			<td class="day-of-week">Saturday</td>
+		</tr>
+		@foreach (var week in MonthInView.Keys)
+		{
+			<tr>
+				@foreach (var day in MonthInView[week])
+				{
+					<td class="@GetDayStyle(day)" @onclick="() => SelectDay(day)">
+						<span class="date-span">@day.Day</span>
+						<div class="event-container">
+							@foreach (var volunteerEvent in VolunteerEvents.ContainsKey(@day.Day) ? VolunteerEvents[@day.Day] : new())
+							{
+								<div class="volunteer-event">
+									<span>@volunteerEvent.EventName</span>
+									<span>@volunteerEvent.EventDescription</span>
+								</div>
+							}
+						</div>
+					</td>
+				}
+			</tr>
+		}
+	</table>
+
+	<button onclick="@ToggleAddEvent">Add New Event</button>
+	@if (ShowAddEvent)
+	{
+		<div class="add-event">
+			<EditForm Model="NewEvent" OnValidSubmit="AddNewVolunteerEvent">
+				<div>
+					<label>
+						Event Name:
+						<InputText @bind-Value="NewEvent!.EventName"/>
+					</label>
+				</div>
+				<div>
+					<label>
+						Event Description:
+						<InputText @bind-Value="NewEvent!.EventDescription" />
+					</label>
+				</div>
+				<div>
+					<label>
+						Event Date:
+						<InputDate @bind-Value="NewEvent!.EventDate"/>
+					</label>
+				</div>
+				<div>
+					<button type="submit">Submit</button>
+				</div>
+			</EditForm>
+		</div>
+		
+	}
+</div>
+
+@code {
+	public DateTime CurrentDay = DateTime.Now;
+
+	public DateTime SelectedMonth { get; set; }
+
+	public DateTime SelectedDate { get; set; }
+
+	public Dictionary<int, List<DateTime>> MonthInView => GetMonthInView(SelectedMonth);
+
+	public Dictionary<int, List<VolunteerEvent>> VolunteerEvents { get; set; } = new();
+
+	public bool ShowAddEvent { get; set; }
+
+	public NewVolunteerEvent NewEvent { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		SelectedMonth = CurrentDay;
+		SelectedDate = CurrentDay;
+		NewEvent = new(CurrentDay);
+	}
+
+	public void ToggleAddEvent()
+	{
+		NewEvent = new(SelectedDate);
+		ShowAddEvent = !ShowAddEvent;
+	}
+
+	public string GetDayStyle(DateTime referenceDate)
+	{
+		if (referenceDate.Date == SelectedDate.Date) return "calendar-day orange-border";
+		if (referenceDate.Date == CurrentDay.Date) return "calendar-day green-border";
+
+		return "calendar-day black-border";
+	}
+
+	public void SelectDay(DateTime day)
+	{
+		SelectedDate = day;
+	}
+
+	public void AddNewVolunteerEvent()
+	{
+		if (string.IsNullOrEmpty(NewEvent.EventName) || string.IsNullOrEmpty(NewEvent.EventDescription)) return;
+		VolunteerEventService.AddVolunteerEvent(NewEvent.EventDate, NewEvent.EventName, NewEvent.EventDescription);
+
+		GetEventsForMonthInView();
+	}
+
+	private Dictionary<int, List<DateTime>> GetMonthInView(DateTime referenceDate)
+	{
+		var startDate = GetStartingDate(new DateTime(referenceDate.Year, referenceDate.Month, 1));
+
+		var monthInView = new Dictionary<int, List<DateTime>>();
+
+		for (int i = 0; i < 6; i++)
+		{
+			var week = i + 1;
+			monthInView.Add(week, Enumerable.Range(i * 7, 7).Select(num => startDate.AddDays(num)).ToList());
+		}
+		GetEventsForMonthInView();
+		return monthInView;
+	}
+
+	private DateTime GetStartingDate(DateTime referenceDate)
+		=> referenceDate.DayOfWeek switch
+		{
+			DayOfWeek.Sunday => referenceDate,
+			DayOfWeek.Monday => referenceDate.AddDays(-1),
+			DayOfWeek.Tuesday => referenceDate.AddDays(-2),
+			DayOfWeek.Wednesday => referenceDate.AddDays(-3),
+			DayOfWeek.Thursday => referenceDate.AddDays(-4),
+			DayOfWeek.Friday => referenceDate.AddDays(-5),
+			_ => referenceDate.AddDays(-6)
+		};
+
+	private async void GetEventsForMonthInView()
+	{
+		var volunteerEvents = await VolunteerEventService.GetVolunteerEvents(SelectedMonth);
+
+		VolunteerEvents = volunteerEvents
+			.GroupBy(volunteerEvent => volunteerEvent.EventDate.Day, volunteerEvent => volunteerEvent, (Key, Values) => (Key, Values))
+			.ToDictionary(group => group.Key, group => group.Values.ToList());
+
+	}
+
+}
